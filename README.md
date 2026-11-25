@@ -2,7 +2,7 @@
 
 [![CI/CD](https://github.com/Gjoce/RIRS_Projekt/actions/workflows/ci-cd.yml/badge.svg?branch=main)](https://github.com/Gjoce/RIRS_Projekt/actions/workflows/ci-cd.yml)
 
-**Nameščena aplikacija:** https://gjoce.github.io/RIRS_Projekt/ (frontend, GitHub Pages) · backend: `<RENDER_URL>/api/health` (Render)
+**Nameščena aplikacija:** https://gjoce.github.io/RIRS_Projekt/ (frontend, GitHub Pages) · backend: https://backtester-api-wndr.onrender.com/api/health (Render)
 
 ## 1. Opis
 
