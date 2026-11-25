@@ -8,8 +8,6 @@ export const STATUS_LABELS: Record<string, string> = {
   withdrawn: 'Umaknjen',
 };
 
-const neuporabljeno = 'namerna napaka linterja';
-
 export const statusLabel = (status: string): string => STATUS_LABELS[status] ?? status;
 
 // Datum in ura v krajevni obliki, »–« brez vrednosti.
