@@ -217,13 +217,18 @@ jobs:
       # Frontend: dist iz joba build se objavi na GitHub Pages (brez ponovne gradnje).
       - uses: actions/configure-pages@v5
 
-      - uses: actions/upload-pages-artifact@v3
+      # Ime z zaporedno številko poskusa: ob ponovnem zagonu joba ne nastaneta dva artefakta »github-pages«.
+      - name: Priprava artefakta za GitHub Pages
+        uses: actions/upload-pages-artifact@v3
         with:
           path: artifacts/frontend-dist
+          name: github-pages-${{ github.run_attempt }}
 
       - name: Namestitev frontenda na GitHub Pages
         id: pages
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
 
       - name: Preverjanje nameščenega backenda
         env:
