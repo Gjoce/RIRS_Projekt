@@ -89,6 +89,8 @@ jobs:
 
       - name: Build Docker slike backenda
         uses: docker/build-push-action@v6
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: false # brez dodatnega artefakta *.dockerbuild
         with:
           context: .
           file: backend/Dockerfile.deploy
@@ -174,10 +176,18 @@ jobs:
       pages: write # objava frontenda na GitHub Pages
       id-token: write
     steps:
-      - name: Prenos artefaktov iz joba build
+      # Samo artefakta za namestitev (ne coverage ali zapisov Docker builda).
+      - name: Prenos artefakta frontend-dist
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          name: frontend-dist
+          path: artifacts/frontend-dist
+
+      - name: Prenos artefakta backend-image
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-image
+          path: artifacts/backend-image
 
       # Backend: slika iz joba build se objavi v GHCR, Render jo prek deploy hooka namesti.
       - name: Objava slike backenda v GHCR
