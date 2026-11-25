@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { createApp } from './app.ts';
 import { ensureAdmin } from './auth.ts';
 import { createCandleStore } from './candles.ts';
+import { parseOrigins } from './cors.ts';
 import { createPool } from './db.ts';
 import { migrate } from './migrate.ts';
 
@@ -17,4 +18,4 @@ const admin = await ensureAdmin(pool, process.env.ADMIN_EMAIL, process.env.ADMIN
 console.log(admin === 'skipped' ? 'ADMIN_EMAIL/ADMIN_PASSWORD nista nastavljena, admin ni ustvarjen' : `Administrator: ${admin}`);
 
 const store = createCandleStore(process.env.DATA_DIR ?? '/data');
-createApp(pool, store, jwtSecret).listen(port, () => console.log(`Backend posluša na portu ${port}`));
+createApp(pool, store, jwtSecret, { origins: parseOrigins(process.env.CORS_ORIGIN) }).listen(port, () => console.log(`Backend posluša na portu ${port}`));

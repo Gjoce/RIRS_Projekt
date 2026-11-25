@@ -1,7 +1,7 @@
 // Razširjeni demo podatki: več mentorjev in trgovcev z realističnimi imeni, lastne strategije, več deset testov
 // na BTCUSDT in EURUSD, pregledi s komentarji, ponovitve po zahtevanih popravkih in deljeni testi.
 // Vse gre prek javnega API-ja delujoče aplikacije. Skripta je varna za ponovni zagon.
-import { call, DEMO_MENTOR, DEMO_PASSWORD, DEMO_TRADER, must } from './demoSeed.ts';
+import { call, DEMO_MENTOR, DEMO_PASSWORD, must } from './demoSeed.ts';
 
 type Person = { name: string; email: string };
 const person = (name: string, email: string): Person => ({ name, email });

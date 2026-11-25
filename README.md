@@ -1,5 +1,9 @@
 # Backtesting-Tool
 
+[![CI/CD](https://github.com/Gjoce/RIRS_Projekt/actions/workflows/ci-cd.yml/badge.svg?branch=main)](https://github.com/Gjoce/RIRS_Projekt/actions/workflows/ci-cd.yml)
+
+**Nameščena aplikacija:** https://gjoce.github.io/RIRS_Projekt/ (frontend, GitHub Pages) · backend: `<RENDER_URL>/api/health` (Render)
+
 ## 1. Opis
 
 Spletna aplikacija za backtesting trgovalnih strategij nad zgodovinskimi podatki kriptovalut in ostalih finančnih sredstev. Rešitev je namenjena trgovcem, ki svoje strategije preizkušajo na preteklih podatkih in jih po potrebi delijo z drugimi, ter mentorjem, ki njihove teste pregledujejo.
@@ -84,11 +88,12 @@ Skripta je idempotentna: če podatki že obstajajo, ne naredi ničesar. Blokada 
 
 ```bash
 docker compose run --rm --build backend npm test    # backend testi (node --test)
-cd backend && npm run typecheck                     # tipi backenda
+cd backend && npm run typecheck && npm run lint     # tipi in lint backenda
+cd frontend && npm run lint && npm test             # lint in testi frontenda (Vitest)
 cd frontend && npm run build                        # tipi in build frontenda
 ```
 
-Prvi ukaz zažene bazo (če še ne teče), za vsak testni fajl ustvari začasno bazo `test_...` in jo po testu izbriše. Testi si sami ustvarijo majhno količino cenovnih podatkov, zato od `data/` niso odvisni. Frontend nima avtomatskih testov, zasloni so preverjeni ročno v brskalniku.
+Prvi ukaz zažene bazo (če še ne teče), za vsak testni fajl ustvari začasno bazo `test_...` in jo po testu izbriše. Testi si sami ustvarijo majhno količino cenovnih podatkov, zato od `data/` niso odvisni. Frontend ima enotske teste (Vitest) za API odjemalca, izračun obdobij, obrazce in UI gradnike; `npm run test:coverage` v obeh mapah izpiše tudi pokritost kode.
 
 ## 7. Dokumentacija
 
@@ -183,17 +188,32 @@ Vzorec je v `.env.example`, sama `.env` je v `.gitignore` in se ne commita. Ustv
 | `JWT_SECRET` | podpis seje, najmanj 32 znakov (`openssl rand -hex 32`); brez nje backend ne zažene | vzorčni niz |
 | `ADMIN_EMAIL` | e-naslov administratorja, ustvarjen ob zagonu, če še ne obstaja | `admin@example.com` |
 | `ADMIN_PASSWORD` | začetno geslo administratorja (najmanj 8 znakov) | `spremeni-me-admin` |
+| `CORS_ORIGIN` | samo pri ločeni namestitvi (Render): dovoljeni izvori frontenda, ločeni z vejico; vklopi CORS in piškotek `SameSite=None` | prazno |
 
 Docker Compose iz njih sestavi `DATABASE_URL` in nastavi `DATA_DIR=/data` za backend.
 
-## 11. CI pipeline
+## 11. CI/CD pipeline
 
-GitHub Actions (`.github/workflows/ci.yml`) teče ob vsakem pushu in pull requestu na en job `ci` (Ubuntu, Node.js 24, storitev PostgreSQL 16):
+GitHub Actions (`.github/workflows/ci-cd.yml`) se sproži ob vsakem pull requestu v `main` in ob vsakem pushu na `main`.
 
-1. **Backend:** `npm ci`, `npm run typecheck`, `npm test`
-2. **Frontend:** `npm ci`, `npm run build` (tipi in produkcijski build)
+| Job | Kaj naredi |
+|---|---|
+| `lint` | oxlint (`.oxlintrc.json`) za backend in frontend; ob kateri koli napaki job pade. ESLint ni uporabljen, ker `typescript-eslint` ne podpira TypeScript 7. |
+| `build` | preverjanje tipov backenda, `vite build` frontenda (z `VITE_API_URL` in potjo za GitHub Pages) ter Docker slika backenda (`backend/Dockerfile.deploy`, vključuje migracije in cenovne podatke). Artefakta: `frontend-dist` in `backend-image`. |
+| `test` | testi backenda (`node --test`, PostgreSQL 16 kot storitev) in frontenda (Vitest, jsdom), oba s pokritostjo kode; poročila so artefakt `coverage`. Če test pade, pade cevovod. |
+| `deploy` | samo ob pushu na `main` in samo, če so `lint`, `build` in `test` uspešni. Uporablja okolje `production`: sliko iz `backend-image` objavi v GHCR in prek deploy hooka namesti na Render, `frontend-dist` objavi na GitHub Pages, nato preveri `/api/health`. Ničesar ne gradi ponovno. |
 
-Pravilo za veji `main` (Settings, Branches) zahteva uspešno preverjanje `ci` pred združitvijo.
+**Caching:** npm predpomnilnik prek `actions/setup-node` (`cache: npm` za oba `package-lock.json`) in sloji Docker slike v GitHub Actions cache (`cache-from/to: type=gha`).
+
+**Nastavitve repozitorija:**
+
+- Okolje `production` (Settings → Environments) s secretom `RENDER_DEPLOY_HOOK_URL`.
+- Spremenljivka repozitorija `VITE_API_URL` = javni URL backenda na Render (brez `/api`).
+- GitHub Pages: Source = GitHub Actions.
+- Zaščita veje `main`: obvezni pull request in uspešne preverbe `lint`, `build` in `test`.
+- Na Render (storitev iz slike `ghcr.io/gjoce/backtester-backend:latest`) so nastavljeni `DATABASE_URL`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` in `CORS_ORIGIN=https://gjoce.github.io`.
+
+Ko sta frontend in backend na različnih domenah, backend z `CORS_ORIGIN` dovoli zahtevke s piškotki in piškotek seje nastavi kot `SameSite=None; Secure; Partitioned`. Lokalno (Docker Compose) `CORS_ORIGIN` ni nastavljen in vse deluje prek nginx kot prej.
 
 ## 12. Preverjanje meril sprejemljivosti
 
