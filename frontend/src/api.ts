@@ -3,12 +3,17 @@ export interface ApiResponse {
   data: unknown;
 }
 
+// Naslov backenda (npr. https://backtester-api.onrender.com). Prazen pomeni isti izvor (nginx proxy v Docker Compose).
+export const API_BASE = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '');
+
+export const apiUrl = (path: string, base = API_BASE): string => `${base}${path}`;
+
 async function request(method: string, path: string, body?: unknown): Promise<ApiResponse> {
-  const res = await fetch(path, {
+  const res = await fetch(apiUrl(path), {
     method,
     headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
-    credentials: 'same-origin',
+    credentials: API_BASE ? 'include' : 'same-origin', // piškotek seje tudi, ko je backend na drugi domeni
   });
   return { status: res.status, data: await res.json().catch(() => null) };
 }

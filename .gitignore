@@ -17,3 +17,4 @@ dist/
 !/data/EURUSD/
 /data/EURUSD/*
 !/data/EURUSD/2025-*.parquet
+coverage/

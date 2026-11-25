@@ -1,0 +1,14 @@
+# Produkcijska slika backenda za namestitev (Render): poleg kode vsebuje tudi cenovne podatke iz data/,
+# ker gostitelj nima priklopljene mape. Gradi se iz korena repozitorija:
+#   docker build -f backend/Dockerfile.deploy -t backtester-backend .
+FROM node:24-alpine
+WORKDIR /app
+ENV NODE_ENV=production DATA_DIR=/data
+COPY --chown=node:node backend/package*.json ./
+RUN npm ci --omit=dev
+COPY --chown=node:node backend/src ./src
+COPY --chown=node:node backend/db ./db
+COPY --chown=node:node data /data
+USER node
+EXPOSE 3000
+CMD ["node", "src/main.ts"]

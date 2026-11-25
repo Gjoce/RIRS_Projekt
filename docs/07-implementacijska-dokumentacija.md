@@ -501,7 +501,8 @@ Merila iz `docs/05-uporabniske-zgodbe.md` so preverjena z avtomatskimi testi bac
 - Zneski načrta financiranega računa morajo biti večji od 0 (ne ≥ 0).
 - Sprememba vloge ali blokada uporabnika velja od njegovega naslednjega zahtevka (glej ADR 0006).
 - Obdobje v analitiki se določa po času zadnje oddaje testa.
-- Frontend nima avtomatskih testov v repozitoriju; zasloni so bili preverjeni ročno z brskalnikom.
+- Frontend ima enotske teste (Vitest) za pomožne funkcije in gradnike; celotni zasloni so bili preverjeni ročno z brskalnikom.
+- Časovna omejitev izvajanja strategije je 5 minut (US-05 zahteva 60 s), ker izračun nad celotnimi minutnimi podatki traja dlje.
 - Stanja testa v aplikaciji so Osnutek, Oddan mentorju, V pregledu, Zahtevane spremembe, Odobren in Umaknjen; stanja izvajanja (»queued«, »running«, »failed«) niso del stroja stanj testa (`backend/src/testStatus.ts`).
 - Aplikacija nima ločenega grafa drawdown; največji padec je prikazan kot metrika, graf pa kaže potek vrednosti računa.
 - Izolacija strategij ni popolna varnostna meja (ADR 0008).
@@ -519,5 +520,4 @@ Zastavica `--build` poskrbi, da se image pred zagonom osveži. Ukaz zažene bazo
 
 ## CI
 
-GitHub Actions (`.github/workflows/ci.yml`) ob vsakem pushu in pull requestu zažene tipski preizkus, teste backenda in build frontenda. Da neuspeh prepreči merge, je v nastavitvah repozitorija (Settings, Branches) za `main` nastavljeno pravilo, ki zahteva uspešno preverjanje `ci`.
-
+CI/CD cevovod (`.github/workflows/ci-cd.yml`) z jobi `lint`, `build`, `test` in `deploy` je opisan v [README.md](../README.md#11-cicd-pipeline). Zaščita veje `main` zahteva uspešne preverbe `lint`, `build` in `test`.

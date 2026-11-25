@@ -9,6 +9,7 @@ import { studentAnalytics } from './mentorAnalytics.ts';
 import { listReviewQueue, listStudents } from './mentorReview.ts';
 import { compareBacktests, createBacktest, getBacktest, getTrades, listBacktests, rejectEdit, retestBacktest, setBacktestVisibility } from './backtestsApi.ts';
 import type { CandleStore } from './candles.ts';
+import { corsHeaders, crossSiteCookie, type CorsOptions } from './cors.ts';
 import { COOKIE_NAME, readCookie, verifyToken } from './session.ts';
 import { acceptLink, declineLink, endLink, invite, listLinks } from './mentorLinks.ts';
 import { createStrategy, deleteStrategy, getStrategy, listStrategies, updateStrategy, listCatalog, setStrategyVisibility } from './strategies.ts';
@@ -205,12 +206,22 @@ async function currentUser(pool: Pool, jwtSecret: string, req: IncomingMessage):
   return { id: Number(row.id), email: row.email, name: row.name, role: row.role };
 }
 
-export function createApp(pool: Pool, store: CandleStore, jwtSecret: string): Server {
+export function createApp(pool: Pool, store: CandleStore, jwtSecret: string, cors: CorsOptions = { origins: [] }): Server {
   return createServer(async (req, res) => {
+    const allowed = corsHeaders(req.headers.origin, cors);
     const send = (status: number, body: unknown, headers: Record<string, string> = {}) => {
-      res.writeHead(status, { 'Content-Type': 'application/json', ...headers });
+      const cookie = headers['Set-Cookie'];
+      // Frontend na drugi domeni: piškotek seje mora biti SameSite=None; Secure.
+      if (cookie && cors.origins.length) headers = { ...headers, 'Set-Cookie': crossSiteCookie(cookie) };
+      res.writeHead(status, { 'Content-Type': 'application/json', ...allowed, ...headers });
       res.end(JSON.stringify(body));
     };
+
+    // Preflight zahtevek brskalnika (CORS).
+    if (req.method === 'OPTIONS' && allowed['Access-Control-Allow-Origin']) {
+      res.writeHead(204, allowed);
+      return res.end();
+    }
 
     const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
     const match = compiled.map((c) => ({ methods: c.methods, found: c.regex.exec(pathname) })).find((c) => c.found);
